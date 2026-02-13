@@ -58,8 +58,8 @@ export default function Dashboard({ initialBookmarks, userId }: { initialBookmar
     })
 
     if (error) {
-      console.error('Error adding bookmark:', error)
-      alert('Error adding bookmark')
+      console.error('Error adding bookmark:', error.message, error.details, error.hint)
+      alert(`Error adding bookmark: ${error.message}`)
     } else {
       setNewTitle('')
       setNewUrl('')
@@ -67,10 +67,19 @@ export default function Dashboard({ initialBookmarks, userId }: { initialBookmar
   }
 
   const deleteBookmark = async (id: string) => {
+    // Optimistic update: Remove immediately
+    const bookmarkToDelete = bookmarks.find(b => b.id === id)
+    setBookmarks((prev) => prev.filter((b) => b.id !== id))
+
     const { error } = await supabase.from('bookmarks').delete().eq('id', id)
+    
     if (error) {
-        console.error('Error deleting bookmark:', error)
-        alert('Error deleting bookmark')
+        console.error('Error deleting bookmark:', error.message, error.details, error.hint)
+        alert(`Error deleting bookmark: ${error.message}`)
+        // Revert if error
+        if (bookmarkToDelete) {
+            setBookmarks(prev => [...prev, bookmarkToDelete])
+        }
     }
   }
 
